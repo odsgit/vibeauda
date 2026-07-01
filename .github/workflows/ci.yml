@@ -28,4 +28,4 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Test
-        run: echo "No tests yet — skipping"
+        run: npm run test
