@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import SheetView from '../components/SheetView';
+import { transposeKey } from '../lib/transpose';
 import type { ChordEvent, LyricLine, Part, SheetData } from '../types/sheet';
 
 /* ─── Constants ─────────────────────────────────────── */
@@ -13,6 +14,9 @@ const PARTS: { id: Part; label: string }[] = [
   { id: 'drum', label: '드럼' },
   { id: 'synth', label: '신스' },
 ];
+
+const DELTA_MIN = -6;
+const DELTA_MAX = 6;
 
 /* ─── Props ─────────────────────────────────────────── */
 
@@ -82,7 +86,14 @@ function LyricsPanel({ lyrics }: { lyrics: LyricLine[] }) {
 
 export default function TrackViewer({ title, artist, parts, lyrics, chords }: TrackViewerProps) {
   const [activePart, setActivePart] = useState<Part>('vocal');
+  const [delta, setDelta] = useState(0);
+
   const sheetData = parts[activePart];
+  const result = sheetData ? transposeKey(sheetData, activePart, delta) : null;
+
+  let deltaLabel = `${delta}`;
+  if (delta === 0) deltaLabel = '원조';
+  else if (delta > 0) deltaLabel = `+${delta}`;
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -92,8 +103,53 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
           <Link to="/" className="mb-4 inline-block text-xs text-gray-600 hover:text-gray-400">
             ← 홈으로
           </Link>
-          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
-          {artist && <p className="mt-0.5 text-sm text-gray-500">{artist}</p>}
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+              {artist && <p className="mt-0.5 text-sm text-gray-500">{artist}</p>}
+            </div>
+
+            {/* Key slider */}
+            <div className="flex items-center gap-3 pb-0.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                ΔKey
+              </span>
+              <input
+                type="range"
+                min={DELTA_MIN}
+                max={DELTA_MAX}
+                step={1}
+                value={delta}
+                onChange={(e) => setDelta(Number(e.target.value))}
+                className="h-1.5 w-32 cursor-pointer accent-violet-500"
+                aria-label="키 조절 슬라이더"
+              />
+              <span
+                className={[
+                  'w-10 text-center text-sm font-bold tabular-nums',
+                  delta === 0 ? 'text-gray-500' : 'text-violet-400',
+                ].join(' ')}
+              >
+                {deltaLabel}
+              </span>
+              {delta !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => setDelta(0)}
+                  className="text-[11px] text-gray-600 hover:text-gray-400"
+                >
+                  초기화
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Guide banner */}
+          {result?.guide && (
+            <div className="mt-3 rounded-lg border border-amber-700/50 bg-amber-900/30 px-4 py-2 text-sm text-amber-300">
+              {result.guide}
+            </div>
+          )}
         </div>
       </header>
 
@@ -121,21 +177,21 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
         </div>
 
         {/* Content */}
-        {sheetData ? (
+        {result ? (
           <div>
             {activePart === 'vocal' && (
               <>
                 {chords && chords.length > 0 && (
                   <ChordPanel
                     chords={chords}
-                    bpm={sheetData.bpm}
-                    timeSignature={sheetData.timeSignature}
+                    bpm={result.data.bpm}
+                    timeSignature={result.data.timeSignature}
                   />
                 )}
                 {lyrics && lyrics.length > 0 && <LyricsPanel lyrics={lyrics} />}
               </>
             )}
-            <SheetView data={sheetData} part={activePart} />
+            <SheetView data={result.data} part={activePart} />
           </div>
         ) : (
           <div className="flex h-40 items-center justify-center rounded-xl bg-gray-900 text-sm text-gray-600">
