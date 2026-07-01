@@ -24,5 +24,15 @@ module.exports = {
     'import/extensions': 'off',
     'import/prefer-default-export': 'off',
     'react/require-default-props': 'off',
+    'import/no-extraneous-dependencies': [
+      'error',
+      {
+        devDependencies: [
+          'vite.config.ts',
+          'src/**/*.test.ts',
+          'src/**/*.test.tsx',
+        ],
+      },
+    ],
   },
 };
