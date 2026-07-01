@@ -16,9 +16,11 @@
   "dependencies": {
     "@spotify/basic-pitch": "^1.0.1",
     "@supabase/supabase-js": "^2.110.0",
+    "jspdf": "^4.2.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
+    "svg2pdf.js": "^2.7.0",
     "vexflow": "^5.0.0"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import PocBasicPitch from './pages/PocBasicPitch';
 import TrackViewer from './pages/TrackViewer';
 import {
   DEMO_BASS,
@@ -12,6 +12,10 @@ import {
   DEMO_VOCAL,
 } from './data/demoTrack';
 import './App.css';
+
+// Lazy-loaded: @spotify/basic-pitch is a heavy TF.js-based dependency that
+// only this page needs, so it shouldn't be pulled into every route's bundle.
+const PocBasicPitch = lazy(() => import('./pages/PocBasicPitch'));
 
 const DEMO_PARTS = {
   vocal: DEMO_VOCAL,
@@ -40,7 +44,14 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/poc/basic-pitch" element={<PocBasicPitch />} />
+        <Route
+          path="/poc/basic-pitch"
+          element={
+            <Suspense fallback={null}>
+              <PocBasicPitch />
+            </Suspense>
+          }
+        />
         <Route
           path="/viewer"
           element={
