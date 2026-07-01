@@ -59,6 +59,10 @@ npm run dev
 | `npm run lint:fix` | ESLint 자동 수정 |
 | `npm run format` | Prettier 포매팅 |
 
+## CI
+
+`main`, `develop` 브랜치로의 push 및 PR에서 GitHub Actions가 자동 실행됩니다 (lint → 타입 체크 → 테스트 순서). CI가 실패하면 PR 병합이 차단되므로, 머지 전에 로컬에서 `npm run lint`와 `npx tsc --noEmit`을 통과시켜 주세요.
+
 ## 폴더 구조
 
 ```
