@@ -15,12 +15,13 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
-    project: './tsconfig.app.json',
+    project: ['./tsconfig.app.json', './tsconfig.node.json'],
   },
   plugins: ['@typescript-eslint', 'prettier'],
   rules: {
     'prettier/prettier': 'error',
     'react/react-in-jsx-scope': 'off',
     'import/extensions': 'off',
+    'import/prefer-default-export': 'off',
   },
 };
