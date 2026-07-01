@@ -8,8 +8,13 @@ React + TypeScript + Vite 기반 프론트엔드 프로젝트
 - **번들러**: Vite
 - **스타일**: Tailwind CSS v4
 - **린터/포매터**: ESLint (Airbnb) + Prettier
-- **백엔드**: Supabase
-- **AI**: OpenAI API
+- **테스트**: Vitest
+- **악보 렌더링**: VexFlow (오선보 + TAB + 드럼보)
+- **PDF 내보내기**: jsPDF + svg2pdf.js
+- **오디오 → MIDI**: @spotify/basic-pitch (TF.js, PoC 단계)
+- **백엔드**: Supabase (DB, Storage, Edge Functions)
+- **분석**: Google Analytics 4, Microsoft Clarity
+- **AI**: OpenAI API (연동 예정 — 아직 코드에서 사용되지 않음)
 
 ## 로컬 실행 방법
 
@@ -38,7 +43,7 @@ cp .env.example .env
 |---|---|
 | `VITE_SUPABASE_URL` | Supabase 프로젝트 URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase 익명 키 |
-| `VITE_OPENAI_API_KEY` | OpenAI API 키 |
+| `VITE_OPENAI_API_KEY` | OpenAI API 키 (아직 어떤 코드에서도 참조하지 않음 — 향후 AI 기능용으로 예약된 변수) |
 | `VITE_GA_MEASUREMENT_ID` | Google Analytics 4 측정 ID (미설정 시 GA 로딩 자체를 건너뜀) |
 | `VITE_CLARITY_PROJECT_ID` | Microsoft Clarity 프로젝트 ID (미설정 시, 또는 localhost에서는 로딩을 건너뜀) |
 
@@ -48,7 +53,13 @@ cp .env.example .env
 npm run dev
 ```
 
-브라우저에서 `http://localhost:5173` 접속
+브라우저에서 `http://localhost:5173` 접속. 사용 가능한 라우트:
+
+| 경로 | 설명 |
+|---|---|
+| `/` | 홈 |
+| `/viewer` | TrackViewer 데모 (하드코딩된 데모 트랙, 6파트 탭 + ΔKey + PDF 다운로드) |
+| `/poc/basic-pitch` | Basic Pitch PoC — 알려진 이슈로 현재 깨져 있음(아래 참고) |
 
 ## 스크립트
 
@@ -60,6 +71,8 @@ npm run dev
 | `npm run lint` | ESLint 검사 |
 | `npm run lint:fix` | ESLint 자동 수정 |
 | `npm run format` | Prettier 포매팅 |
+| `npm run test` | Vitest 전체 실행 (CI와 동일) |
+| `npm run test:watch` | Vitest watch 모드 |
 
 ## CI
 
@@ -118,13 +131,25 @@ supabase secrets set CRON_SECRET=<임의의 랜덤 문자열>
 
 > **주의**: 현재 앱 코드에는 트랙 조회 시 `last_accessed_at`을 갱신하는 로직이 아직 없습니다(실제 Supabase 연동 트랙 조회 화면이 구현되면 함께 추가해야 함). 그 전까지는 사실상 "생성 후 90일"과 동일하게 동작합니다.
 
+## 알려진 이슈
+
+- **`/poc/basic-pitch` 페이지가 dev 서버에서 깨짐**: `@tensorflow/tfjs-converter/dist/executor/hash_table.js`의 `async import(keys, values) {...}` 메서드를 현재 Vite 버전(`^8.1.1` → 실제 해석 `8.1.2`)의 dynamic-import 재작성 로직이 오인식해서 발생. `optimizeDeps.exclude`로는 문제가 옮겨갈 뿐 해결되지 않았음. 다른 라우트(`/`, `/viewer`)는 `App.tsx`에서 이 페이지를 `React.lazy()`로 분리해 영향받지 않도록 격리해 둠. 실제 수정은 Vite 버전 다운그레이드 또는 `patch-package`로 해당 라이브러리 파일을 패치해야 함.
+
 ## 폴더 구조
 
 ```
 src/
-├── components/   # 재사용 가능한 UI 컴포넌트
-├── pages/        # 라우트별 페이지 컴포넌트
-├── lib/          # 외부 클라이언트 (Supabase 등) 초기화
-├── hooks/        # 커스텀 훅
+├── components/   # 재사용 가능한 UI 컴포넌트 (SheetView 등)
+├── pages/        # 라우트별 페이지 컴포넌트 (TrackViewer, PocBasicPitch)
+├── lib/          # 순수 로직 + 외부 클라이언트 초기화
+│                 #   supabase.ts, analytics.ts(GA4), clarity.ts,
+│                 #   transpose.ts(이조), fft.ts/guitarSplit.ts(기타 분리),
+│                 #   renderSheet.ts(VexFlow 렌더링), exportPdf.ts(PDF 내보내기)
+├── data/         # 데모/샘플 데이터
+├── hooks/        # 커스텀 훅 (현재 비어 있음)
 └── types/        # TypeScript 타입 정의
+
+supabase/
+├── migrations/   # DB 스키마 마이그레이션
+└── functions/    # Edge Functions (예: cleanup-stale-tracks)
 ```
