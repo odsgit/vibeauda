@@ -37,8 +37,20 @@ export default function PocBasicPitch() {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const audioCtx = new AudioContext({ sampleRate: 22050 });
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      const decoded = await audioCtx.decodeAudioData(arrayBuffer);
       await audioCtx.close();
+
+      // Basic Pitch requires mono — mix down all channels by averaging
+      const monoData = new Float32Array(decoded.length);
+      for (let ch = 0; ch < decoded.numberOfChannels; ch += 1) {
+        const channelData = decoded.getChannelData(ch);
+        for (let i = 0; i < decoded.length; i += 1) {
+          monoData[i] += channelData[i];
+        }
+      }
+      for (let i = 0; i < monoData.length; i += 1) {
+        monoData[i] /= decoded.numberOfChannels;
+      }
 
       setStatus('inferring');
       const startTime = performance.now();
@@ -50,7 +62,7 @@ export default function PocBasicPitch() {
       let contours: number[][] = [];
 
       await basicPitch.evaluateModel(
-        audioBuffer,
+        monoData,
         (f, o, c) => {
           frames = f;
           onsets = o;
