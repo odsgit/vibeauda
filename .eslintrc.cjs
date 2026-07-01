@@ -4,6 +4,9 @@ module.exports = {
     browser: true,
     es2021: true,
   },
+  // Deno Edge Function source — separate runtime/toolchain, not part of
+  // either tsconfig project, and not linted by this Node-oriented config.
+  ignorePatterns: ['supabase/functions/**'],
   extends: [
     'airbnb',
     'airbnb-typescript',
