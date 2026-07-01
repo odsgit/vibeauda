@@ -101,6 +101,23 @@ Settings → **Environment variables**의 Production 값이 아래와 실제로 
 
 > 위 항목들은 Cloudflare 콘솔에서 사람이 직접 확인해야 하는 절차이며, 이 저장소의 코드만으로는 검증할 수 없습니다.
 
+## Supabase Edge Functions
+
+### cleanup-stale-tracks (Storage TTL)
+
+`last_accessed_at`(마이그레이션 `20260702000000_track_ttl_columns.sql`) 기준으로 90일간 열람되지 않은 트랙의 원본 오디오(`audio-tracks` 버킷)와 스템 파일(`audio-stems` 버킷)을 삭제합니다. `sheets`(악보/가사 데이터)는 항상 보존되며, `tracks` 행도 삭제하지 않고 `status`를 `expired`로, `file_url`을 `null`로 갱신합니다.
+
+배포 및 스케줄 등록:
+
+```bash
+supabase functions deploy cleanup-stale-tracks --no-verify-jwt
+supabase secrets set CRON_SECRET=<임의의 랜덤 문자열>
+```
+
+이후 `supabase/functions/cleanup-stale-tracks/schedule.sql`을 열어 `<PROJECT_REF>`, `<CRON_SECRET>`을 실제 값으로 채운 뒤 Supabase SQL 편집기에서 한 번 실행하면 pg_cron으로 매일 03:00 UTC에 자동 실행되도록 등록됩니다(사전에 대시보드에서 `pg_cron`, `pg_net` 확장 활성화 필요).
+
+> **주의**: 현재 앱 코드에는 트랙 조회 시 `last_accessed_at`을 갱신하는 로직이 아직 없습니다(실제 Supabase 연동 트랙 조회 화면이 구현되면 함께 추가해야 함). 그 전까지는 사실상 "생성 후 90일"과 동일하게 동작합니다.
+
 ## 폴더 구조
 
 ```
