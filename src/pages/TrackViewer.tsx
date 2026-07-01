@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SheetView from '../components/SheetView';
 import { transposeKey } from '../lib/transpose';
 import { downloadAllPartsPdf, downloadPartPdf } from '../lib/exportPdf';
+import { trackKeyTranspose, trackSheetViewSwitch } from '../lib/analytics';
 import type { ChordEvent, LyricLine, Part, SheetData } from '../types/sheet';
 
 /* ─── Constants ─────────────────────────────────────── */
@@ -102,6 +103,16 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
     return out;
   }, [parts, delta]);
 
+  const handlePartChange = (part: Part) => {
+    setActivePart(part);
+    trackSheetViewSwitch(part);
+  };
+
+  const handleDeltaChange = (nextDelta: number) => {
+    setDelta(nextDelta);
+    trackKeyTranspose(nextDelta);
+  };
+
   const handleDownloadPart = async () => {
     if (!result) return;
     setIsExporting(true);
@@ -150,7 +161,7 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
                 max={DELTA_MAX}
                 step={1}
                 value={delta}
-                onChange={(e) => setDelta(Number(e.target.value))}
+                onChange={(e) => handleDeltaChange(Number(e.target.value))}
                 className="h-1.5 w-32 cursor-pointer accent-violet-500"
                 aria-label="키 조절 슬라이더"
               />
@@ -165,7 +176,7 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
               {delta !== 0 && (
                 <button
                   type="button"
-                  onClick={() => setDelta(0)}
+                  onClick={() => handleDeltaChange(0)}
                   className="text-[11px] text-gray-600 hover:text-gray-400"
                 >
                   초기화
@@ -212,7 +223,7 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
               type="button"
               role="tab"
               aria-selected={activePart === id}
-              onClick={() => setActivePart(id)}
+              onClick={() => handlePartChange(id)}
               className={[
                 'flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium',
                 'whitespace-nowrap transition-colors',
