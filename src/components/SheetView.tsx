@@ -289,7 +289,7 @@ export default function SheetView({ data, part }: SheetViewProps) {
           spb,
           tuning,
         );
-        const voice = new Voice({ num_beats: beatsPerMeasure, beat_value: timeSignature[1] });
+        const voice = new Voice({ numBeats: beatsPerMeasure, beatValue: timeSignature[1] });
         voice.setMode(Voice.Mode.SOFT);
         voice.addTickables(tickables);
         const noteWidth = stave.getX() + stave.getWidth() - stave.getNoteStartX() - 10;
@@ -311,7 +311,7 @@ export default function SheetView({ data, part }: SheetViewProps) {
           clef,
           isDrum,
         );
-        const voice = new Voice({ num_beats: beatsPerMeasure, beat_value: timeSignature[1] });
+        const voice = new Voice({ numBeats: beatsPerMeasure, beatValue: timeSignature[1] });
         voice.setMode(Voice.Mode.SOFT);
         voice.addTickables(tickables);
         const noteWidth = stave.getX() + stave.getWidth() - stave.getNoteStartX() - 10;
