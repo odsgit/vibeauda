@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SheetView from '../components/SheetView';
 import { transposeKey } from '../lib/transpose';
+import { downloadAllPartsPdf, downloadPartPdf } from '../lib/exportPdf';
+import { trackKeyTranspose, trackSheetViewSwitch } from '../lib/analytics';
 import type { ChordEvent, LyricLine, Part, SheetData } from '../types/sheet';
 
 /* ─── Constants ─────────────────────────────────────── */
@@ -87,9 +89,48 @@ function LyricsPanel({ lyrics }: { lyrics: LyricLine[] }) {
 export default function TrackViewer({ title, artist, parts, lyrics, chords }: TrackViewerProps) {
   const [activePart, setActivePart] = useState<Part>('vocal');
   const [delta, setDelta] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const sheetData = parts[activePart];
   const result = sheetData ? transposeKey(sheetData, activePart, delta) : null;
+
+  const transposedParts = useMemo(() => {
+    const out: Partial<Record<Part, SheetData>> = {};
+    PARTS.forEach(({ id }) => {
+      const data = parts[id];
+      if (data) out[id] = transposeKey(data, id, delta).data;
+    });
+    return out;
+  }, [parts, delta]);
+
+  const handlePartChange = (part: Part) => {
+    setActivePart(part);
+    trackSheetViewSwitch(part);
+  };
+
+  const handleDeltaChange = (nextDelta: number) => {
+    setDelta(nextDelta);
+    trackKeyTranspose(nextDelta);
+  };
+
+  const handleDownloadPart = async () => {
+    if (!result) return;
+    setIsExporting(true);
+    try {
+      await downloadPartPdf(title, activePart, result.data);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    setIsExporting(true);
+    try {
+      await downloadAllPartsPdf(title, transposedParts);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   let deltaLabel = `${delta}`;
   if (delta === 0) deltaLabel = '원조';
@@ -120,7 +161,7 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
                 max={DELTA_MAX}
                 step={1}
                 value={delta}
-                onChange={(e) => setDelta(Number(e.target.value))}
+                onChange={(e) => handleDeltaChange(Number(e.target.value))}
                 className="h-1.5 w-32 cursor-pointer accent-violet-500"
                 aria-label="키 조절 슬라이더"
               />
@@ -135,12 +176,32 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
               {delta !== 0 && (
                 <button
                   type="button"
-                  onClick={() => setDelta(0)}
+                  onClick={() => handleDeltaChange(0)}
                   className="text-[11px] text-gray-600 hover:text-gray-400"
                 >
                   초기화
                 </button>
               )}
+            </div>
+
+            {/* PDF export */}
+            <div className="flex items-center gap-2 pb-0.5">
+              <button
+                type="button"
+                disabled={!result || isExporting}
+                onClick={handleDownloadPart}
+                className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                이 파트 PDF 다운로드
+              </button>
+              <button
+                type="button"
+                disabled={isExporting}
+                onClick={handleDownloadAll}
+                className="rounded-lg bg-violet-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                전체 6파트 PDF로 받기
+              </button>
             </div>
           </div>
 
@@ -162,7 +223,7 @@ export default function TrackViewer({ title, artist, parts, lyrics, chords }: Tr
               type="button"
               role="tab"
               aria-selected={activePart === id}
-              onClick={() => setActivePart(id)}
+              onClick={() => handlePartChange(id)}
               className={[
                 'flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium',
                 'whitespace-nowrap transition-colors',

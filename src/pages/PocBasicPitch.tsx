@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { BasicPitch, noteFramesToTime, outputToNotesPoly } from '@spotify/basic-pitch';
 import type { NoteEventTime } from '@spotify/basic-pitch';
+import { trackUpload } from '../lib/analytics';
 
 const MODEL_URL = '/basic-pitch/model.json';
 
@@ -27,6 +28,8 @@ export default function PocBasicPitch() {
       setStatus('error');
       return;
     }
+
+    trackUpload({ fileType: file.type || file.name.split('.').pop() });
 
     setStatus('decoding');
     setProgress(0);
