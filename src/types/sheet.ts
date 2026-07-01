@@ -20,3 +20,15 @@ export interface SheetViewProps {
   part: Part;
   width?: number;
 }
+
+export interface LyricLine {
+  text: string;
+  startTime: number;
+  endTime: number;
+}
+
+export interface ChordEvent {
+  name: string;
+  startTime: number;
+  duration: number;
+}
